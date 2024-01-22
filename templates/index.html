@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+}
+
+.search-container {
+    background-color: #f0e6f6;
+    padding: 10px;
+    text-align: center;
+}
+
+#search-input {
+    margin-right: 10px;
+}
+
+.results-container {
+    background-color: #f8f0f6;
+    margin-top: 20px;
+    padding: 20px;
+    text-align: center;
+}
+.results-container {
+    background-color: #f8f0f6;
+    margin-top: 20px;
+    padding: 20px;
+    text-align: start;
+    word-wrap: break-word; /* 긴 단어나 URL이 경계를 넘어갈 때 자동 줄바꿈 */
+    white-space: normal; /* 공백과 개행을 정상적으로 처리 */
+}
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>검색 바 예제</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="검색...">
+        <button id="search-button">검색</button>
+    </div>
+    <div class="results-container" id="results">
+        검색 결과가 여기에 표시됩니다.
+    </div>
+
+    <script>
+        document.getElementById('search-button').addEventListener('click', function() {
+    var query = document.getElementById('search-input').value;
+    document.getElementById('results').innerHTML = '검색 내용: ' + query;
+});
+    document.getElementById('search-button').addEventListener('click', function() {
+        var query = document.getElementById('search-input').value;
+
+        // 서버에 검색 쿼리 전송
+        fetch('/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({query: query})
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('results').innerHTML = data.result;
+        })
+        .catch(error => console.error('Error:', error));
+    });
+    </script>
+</body>
+</html>
