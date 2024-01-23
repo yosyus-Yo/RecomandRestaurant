@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 클라이언트 ID와 클라이언트 시크릿
-client_id = os.getenv("NAVER_CLIENT_ID")
-client_secret = os.getenv("NAVER_CLIENT_SECRET")
+client_id = os.getenv("NAVER_MAP_CLIENT_ID")
+client_secret = os.getenv("NAVER_MAP_CLIENT_SECRET")
 
 # API 요청 URL
-url = "https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode"
+url = "https://naveropenapi.apigw.ntruss.com/map-static/v2/raster"
 
 # 쿼리 파라미터
 params = {
