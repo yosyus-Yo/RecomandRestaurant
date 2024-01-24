@@ -67,24 +67,26 @@ def wait_on_run(run):
     
 #thread 생성
 # thread = client.beta.threads.create()
-# print(thread)
-thread_id = "thread_okkNq7f9MjMZUUai4N9NNqFL"
+thread_id = "thread_bDQEv6EN3yPxSVbpwilgKqXU"
+print(thread_id)
 # response = client.beta.threads.delete(thread_id)
 
 def run_cancel(thread_id):
     run = client.beta.threads.runs.list(
         thread_id=thread_id
     )
-    if (run.data[0].status == "queued" or run.data[0].status == "in_progress"):
-        run = run.data[0]
-        run = client.beta.threads.runs.cancel(
-        thread_id=thread_id,
-        run_id=run.id,
-        )
+    for data in run.data:
+        if (data.status == "requires_action" or data.status == "queued" or data.status == "in_progress"):
+            run = data
+            run = client.beta.threads.runs.cancel(
+            thread_id=thread_id,
+            run_id=run.id,
+            )
+        print(data.status)
 def thread_message():
     thread_messages = client.beta.threads.messages.list(thread_id)
     return thread_messages
-
+    
 #msg_f7MmkNqk7FsgSeSaDMidMZDO
 def startMessage(inputC):
     run_cancel(thread_id)
@@ -95,22 +97,23 @@ def startMessage(inputC):
             role="user",
             content=InputChat
         )
-
+        print(InputChat)
         run = client.beta.threads.runs.create(
         thread_id=thread_id,
         assistant_id=assistants_id,
         )
-
         run = wait_on_run(run)
-
+        print("런 상태 : ", run.status)
         if run.status == "requires_action":
-            if InputChat :
-                tool_call = run.required_action.submit_tool_outputs.tool_calls[0]
-            else :
-                tool_call = run.required_action.submit_tool_outputs.tool_calls[1]
+            print("requires_action들어옴")
+            tool_call = run.required_action.submit_tool_outputs.tool_calls[0]
             arguments = json.loads(tool_call.function.arguments)
             print(arguments)
-            task = urlscrap.Search_Restaurant(**arguments)
+            try :
+                task = urlscrap.Search_Restaurant(**arguments)
+            except TypeError: 
+                print("해당사항 없음")
+                task = "해당사항 없음"
             
             run = client.beta.threads.runs.submit_tool_outputs(
                 thread_id=thread_id,
@@ -120,12 +123,14 @@ def startMessage(inputC):
                         "tool_call_id": tool_call.id,
                         "output": str(task)
                     }
-                ],
-            )
+                ],)
             run = wait_on_run(run)
+        print("requires_action에서 나옴")
         messages = client.beta.threads.messages.list(
             thread_id=thread_id
         )
+        print("다 끝나감")
+        print("런 상태 : " , run.status)
         return messages.data[0].content[0].text.value
     
     #git 추가

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Chat and Map</title>
     <style>
@@ -8,25 +9,44 @@
             margin: 0;
             padding: 0;
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
+            /* Align the chat-container to the start */
             align-items: center;
+            /* Center items vertically */
             height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            /* Adjust width to fill the screen */
+            height: 80%;
+            /* Adjust height as per your requirement */
+            align-items: stretch;
         }
 
         #chat-container {
             background-color: rgb(161, 218, 255);
             border: 1px solid #ffffff;
             border-radius: 15px;
-            width: 50%;
-            padding: 10px;
+            width: 30%;
+            height: 800px;
+            /* Adjusted for demo purposes */
+            margin: 20px;
+            /* Add margin for padding effect */
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            /* Distributes space between children */
         }
 
         #chat-box {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            height: 600px;
+            height: 800px;
             overflow-y: auto;
             margin-bottom: 10px;
             border: 1px solid #ddd;
@@ -35,7 +55,8 @@
 
         #chat-input-container {
             display: flex;
-            justify-content: space-between;
+            padding: 10px;
+            /* Add padding for input and button */
         }
 
         #chat-input {
@@ -49,78 +70,103 @@
         }
 
         #map-container {
-        /* 지도 컨테이너 스타일 */
-        width: 50%; /* 또는 필요한 비율 */
+            flex-grow: 1;
+            /* Allow the map to fill the rest of the space */
+            margin-left: 20px;
+            /* Add some margin between chat and map */
+            padding: 20px 0;
+            /* Add padding at the top and bottom */
         }
 
-        .container {
-            display: flex;
-            justify-content: space-between;
+        #map {
+            width: 700px;
+            /* Make the map responsive */
+            height: 700px;
+            /* Adjust height to fill the container */
         }
 
         .message {
-            display: flex;
             padding: 10px;
             border-radius: 10px;
             margin-bottom: 10px;
             word-wrap: break-word;
+            max-width: 80%;
         }
 
         .user-message {
             background-color: lightyellow;
             align-self: flex-end;
             border-bottom-right-radius: 0;
-            max-width: 80%;
         }
 
         .system-message {
-            background-color: lightgray;
+            background-color: rgb(252, 252, 252);
             align-self: flex-start;
             border-bottom-left-radius: 0;
-            max-width: 80%;
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 </head>
+
 <body>
-    <div class="container">
-        <div id="chat-container">
-            <div id="chat-box"></div>
-            <div id="chat-input-container">
-                <input type="text" id="chat-input" placeholder="메시지를 입력하세요...">
-                <button id="send-btn">전송</button>
-            </div>
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="메시지를 입력하세요...">
+            <button id="send-btn">전송</button>
         </div>
+    </div>
+    <div id="map-container">
         <section class="section" id="section-3">
             <h1>오시는 길</h1>
-            <div id="map" style="width: 600px; height: 600px; margin:auto"></div>
-            <code id="snippet" class="snippet"></code>
+            <div id="map"></div>
         </section>
     </div>
-    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=2xj7pkji00"></script>
+    <script type="text/javascript"
+        src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=2xj7pkji00"></script>
     <script>
+        var allMarkers = [];
+
+        // 기존의 모든 마커를 지도에서 제거하는 함수입니다.
+        function removeMarkers() {
+            allMarkers.forEach(function(marker) {
+                marker.setMap(null); // 마커를 지도에서 제거합니다.
+            });
+            allMarkers = []; // allMarkers 배열을 비웁니다.
+        }
         var map = new naver.maps.Map('map', {
-            center: new naver.maps.LatLng(37.50180355734507, 126.98714909796672),
-            zoom: 10
-        });
-
-        document.getElementById('send-btn').addEventListener('click', function() {
+            center: new naver.maps.LatLng(37.5299, 126.9209),
+            zoom: 17, //지도의 초기 줌 레벨
+            minZoom: 8, //지도의 최소 줌 레벨
+            zoomControl: true, //줌 컨트롤의 표시 여부
+            zoomControlOptions: { //줌 컨트롤의 옵션
+                position: naver.maps.Position.TOP_RIGHT
+        }});
+        function formatMessageWithLineBreaks(message) {
+            return message.replace(/\n/g, '<br>');
+        }
+        document.getElementById('send-btn').addEventListener('click', function () {
             var userInput = document.getElementById('chat-input').value;
-
+            addUserMessage(userInput);
             $.ajax({
-                url: '/getMarkers',
+                url: '/sendMessage',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({user_input: userInput}),
-                success: function(markers) {
-                    console.log(markers);
-                    markers.forEach(function(markerInfo) {
+                data: JSON.stringify({ message: userInput }),
+                success: function (response) {
+                    var formattedMessage = formatMessageWithLineBreaks(response.data.response);
+                    addSystemMessage(formattedMessage);
+                    document.getElementById('chat-input').value = '';
+
+                    removeMarkers();
+                    map.setCenter(new naver.maps.LatLng(response.markers[0].lat, response.markers[0].lng));
+                    response.markers.forEach(function (markerInfo) {
                         var position = new naver.maps.LatLng(markerInfo.lat, markerInfo.lng);
-                        console.log(position);
                         var marker = new naver.maps.Marker({
                             position: position,
                             map: map
                         });
+                        allMarkers.push(marker);
                         console.log("Marker: ", marker); // 생성된 마커 로깅
                         var contentString = [
                             '<div class="iw_inner" style="padding:5px; margin: 5px 0px 5px 0px; width: 150px; height: 45px; text-align: center; ">',
@@ -133,7 +179,7 @@
                             content: contentString
                         });
 
-                        naver.maps.Event.addListener(marker, "click", function(e) {
+                        naver.maps.Event.addListener(marker, "click", function (e) {
                             if (infowindow.getMap()) {
                                 infowindow.close();
                             } else {
@@ -142,13 +188,24 @@
                         });
                     });
                 },
-                error: function(error) {
+                error: function (error) {
                     console.log(error);
                 }
             });
-
             document.getElementById('chat-input').value = '';
         });
+        // 사용자 메시지를 채팅 박스에 추가하는 함수
+        function addUserMessage(message) {
+            var userMessage = '<div class="message user-message">' + message + '</div>';
+            $('#chat-box').append(userMessage);
+        }
+
+        // 시스템 메시지를 채팅 박스에 추가하는 함수
+        function addSystemMessage(message) {
+            var systemMessage = '<div class="message system-message">' + message + '</div>';
+            document.getElementById('chat-box').innerHTML += systemMessage;
+        }
     </script>
 </body>
+
 </html>

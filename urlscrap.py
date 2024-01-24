@@ -9,6 +9,7 @@ from selenium.common.exceptions import NoSuchElementException
 from urllib import parse
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.keys import Keys
+import Place
 import pandas as pd
 import time
 import os
@@ -38,7 +39,9 @@ options.add_argument('window-size=1920x1080')
 options.add_argument("disable-gpu")
 options.add_argument("--log-level=3")
 
-def Search_Restaurant(input):
+def Search_Restaurant(input, flag):
+    if flag == "2":
+        return get_restaurant_url_selenium(input)
     Search_params = {
         "query": input,
         "display": 10,
@@ -47,19 +50,15 @@ def Search_Restaurant(input):
     }
     Search_response = requests.get(urlserach, headers=headers, params=Search_params)
     data = Search_response.json()
-    # RestaurantData = ''
-    # for item in data['items']:
-    #     RestaurantData += item['title'] + '/' + item['address'] + '/ mapx : ' + item['mapx'] + '/ mapy : ' + item['mapy'] +'\n'
-    # return RestaurantData
-    # 추출할 필드를 지정합니다.
-    fields = ['title', 'address', 'mapx', 'mapy']
-
-    # 필요한 정보를 추출하여 새로운 리스트에 저장합니다.
+    RestaurantData = ''
     extracted_data = []
+    fields = ['title', 'address', 'mapx', 'mapy']
     for item in data['items']:
+        RestaurantData += item['title'] + '/' + item['address'] + '\n'
         extracted_item = {field: item[field] for field in fields}
         extracted_data.append(extracted_item)
-    return extracted_data
+    if flag == "1":
+        return RestaurantData, extracted_data
 
 def Restaurant_Blog(restaurant_name):
     Blog_params = {
@@ -133,4 +132,3 @@ def get_restaurant_reviwes(Furl, keyword):
         print(e)
     getReviweDriver.quit()
     return Reviewdata
-Search_Restaurant('맛집')
