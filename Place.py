@@ -102,6 +102,7 @@ def startMessage(inputC):
         thread_id=thread_id,
         assistant_id=assistants_id,
         )
+        data = []
         run = wait_on_run(run)
         print("런 상태 : ", run.status)
         if run.status == "requires_action":
@@ -109,8 +110,11 @@ def startMessage(inputC):
             tool_call = run.required_action.submit_tool_outputs.tool_calls[0]
             arguments = json.loads(tool_call.function.arguments)
             print(arguments)
+            
             try :
-                task = urlscrap.Search_Restaurant(**arguments)
+                task, data = urlscrap.Search_Restaurant(**arguments)
+                print(data)
+                print(task)
             except TypeError: 
                 print("해당사항 없음")
                 task = "해당사항 없음"
@@ -131,7 +135,9 @@ def startMessage(inputC):
         )
         print("다 끝나감")
         print("런 상태 : " , run.status)
-        return messages.data[0].content[0].text.value
+        return messages.data[0].content[0].text.value, data
+
+        
     
     #git 추가
 

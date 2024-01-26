@@ -126,10 +126,36 @@
         src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=2xj7pkji00"></script>
     <script>
         var allMarkers = [];
+        const loadingMessageId = 'loading-message';
+        function showLoadingMessage() {
+            let dots = '.';
+            const loadingElement = document.createElement('div');
+            loadingElement.className = 'message system-message';
+            loadingElement.id = loadingMessageId;
+            loadingElement.textContent = `답변을 받고 있습니다${dots}`;
+            document.getElementById('chat-box').appendChild(loadingElement);
 
-        // 기존의 모든 마커를 지도에서 제거하는 함수입니다.
+            // 1초마다 점을 추가하거나 리셋하는 인터벌을 설정합니다.
+            const intervalId = setInterval(() => {
+                dots = dots.length < 3 ? dots + '.' : '.';
+                loadingElement.textContent = `답변을 받고 있습니다${dots}`;
+            }, 500);
+
+            // 로딩 메시지와 인터벌 ID를 반환하여 나중에 접근할 수 있도록 합니다.
+            return intervalId;
+        }
+
+        // "답변을 받고 있습니다." 메시지를 삭제하는 함수입니다.
+        function removeLoadingMessage(intervalId) {
+            clearInterval(intervalId); // 인터벌을 중지합니다.
+            const loadingElement = document.getElementById(loadingMessageId);
+            if (loadingElement) {
+                loadingElement.remove(); // 메시지 엘리먼트를 삭제합니다.
+            }
+        }
+            // 기존의 모든 마커를 지도에서 제거하는 함수입니다.
         function removeMarkers() {
-            allMarkers.forEach(function(marker) {
+            allMarkers.forEach(function (marker) {
                 marker.setMap(null); // 마커를 지도에서 제거합니다.
             });
             allMarkers = []; // allMarkers 배열을 비웁니다.
@@ -141,55 +167,63 @@
             zoomControl: true, //줌 컨트롤의 표시 여부
             zoomControlOptions: { //줌 컨트롤의 옵션
                 position: naver.maps.Position.TOP_RIGHT
-        }});
+            }
+        });
         function formatMessageWithLineBreaks(message) {
             return message.replace(/\n/g, '<br>');
         }
         document.getElementById('send-btn').addEventListener('click', function () {
             var userInput = document.getElementById('chat-input').value;
             addUserMessage(userInput);
+            const intervalId = showLoadingMessage();
             $.ajax({
                 url: '/sendMessage',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({ message: userInput }),
                 success: function (response) {
-                    var formattedMessage = formatMessageWithLineBreaks(response.data.response);
+                    removeLoadingMessage(intervalId);
+                    var formattedMessage = formatMessageWithLineBreaks(response.response);
                     addSystemMessage(formattedMessage);
                     document.getElementById('chat-input').value = '';
+                    if (!response.markers) {
+                        return;
+                    }
+                    else {
+                        removeMarkers();
+                        map.setCenter(new naver.maps.LatLng(response.markers[0].lat, response.markers[0].lng));
+                        response.markers.forEach(function (markerInfo) {
+                            var position = new naver.maps.LatLng(markerInfo.lat, markerInfo.lng);
+                            var marker = new naver.maps.Marker({
+                                position: position,
+                                map: map
+                            });
+                            allMarkers.push(marker);
+                            console.log("Marker: ", marker); // 생성된 마커 로깅
+                            var contentString = [
+                                '<div class="iw_inner" style="padding:5px; margin: 5px 0px 5px 0px; width: 150px; height: 45px; text-align: center; ">',
+                                '   <p style="font-size: 1rem; margin: 0;">' + markerInfo.title + '</p>',
+                                '   <p style="font-size: 0.8rem; margin: 0;">' + markerInfo.address + '</p>',
+                                '</div>'
+                            ].join('');
 
-                    removeMarkers();
-                    map.setCenter(new naver.maps.LatLng(response.markers[0].lat, response.markers[0].lng));
-                    response.markers.forEach(function (markerInfo) {
-                        var position = new naver.maps.LatLng(markerInfo.lat, markerInfo.lng);
-                        var marker = new naver.maps.Marker({
-                            position: position,
-                            map: map
-                        });
-                        allMarkers.push(marker);
-                        console.log("Marker: ", marker); // 생성된 마커 로깅
-                        var contentString = [
-                            '<div class="iw_inner" style="padding:5px; margin: 5px 0px 5px 0px; width: 150px; height: 45px; text-align: center; ">',
-                            '   <p style="font-size: 1rem; margin: 0;">' + markerInfo.title + '</p>',
-                            '   <p style="font-size: 0.8rem; margin: 0;">' + markerInfo.address + '</p>',
-                            '</div>'
-                        ].join('');
+                            var infowindow = new naver.maps.InfoWindow({
+                                content: contentString
+                            });
 
-                        var infowindow = new naver.maps.InfoWindow({
-                            content: contentString
+                            naver.maps.Event.addListener(marker, "click", function (e) {
+                                if (infowindow.getMap()) {
+                                    infowindow.close();
+                                } else {
+                                    infowindow.open(map, marker);
+                                }
+                            });
                         });
-
-                        naver.maps.Event.addListener(marker, "click", function (e) {
-                            if (infowindow.getMap()) {
-                                infowindow.close();
-                            } else {
-                                infowindow.open(map, marker);
-                            }
-                        });
-                    });
+                    }
                 },
                 error: function (error) {
                     console.log(error);
+                    removeLoadingMessage(intervalId);
                 }
             });
             document.getElementById('chat-input').value = '';

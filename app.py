@@ -7,13 +7,12 @@ app = Flask(__name__)
 def index():
     return render_template('index.html')
 
-@app.route('/getMarkers', methods=['POST'])
-def get_markers():
-    data = request.json
-    user_input = data['user_input']
-    restaurant_data = urlscrap.Search_Restaurant(user_input, 0)
-    print(restaurant_data)
-    markers = [
+@app.route('/sendMessage', methods=['POST'])
+def send_message():
+    message = request.json['message']
+    response_message, restaurant_data = Place.startMessage(message)
+    if restaurant_data != []:
+        markers = [
         {
             "title": data['title'],
             "address": data['address'],
@@ -21,14 +20,8 @@ def get_markers():
             "lat": convert_to_lng(data['mapy'])   # mapy 값을 경도로 변환
         }
         for data in restaurant_data
-    ]
-    return jsonify(markers)
-
-@app.route('/sendMessage', methods=['POST'])
-def send_message():
-    message = request.json['message']
-    response_message = Place.startMessage(message)
-    print(response_message)
+        ]
+        return jsonify({"response": response_message, "markers": markers})
     return jsonify({"response": response_message})
 
 def convert_to_lat(mapx):

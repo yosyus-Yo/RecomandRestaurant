@@ -4,17 +4,16 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
 from urllib import parse
 from bs4 import BeautifulSoup
-from selenium.webdriver.common.keys import Keys
-import Place
 import pandas as pd
 import time
 import os
 from dotenv import load_dotenv
 import requests
+import aiohttp
+import asyncio
 
 load_dotenv()
 
@@ -40,8 +39,6 @@ options.add_argument("disable-gpu")
 options.add_argument("--log-level=3")
 
 def Search_Restaurant(input, flag):
-    if flag == "2":
-        return get_restaurant_url_selenium(input)
     Search_params = {
         "query": input,
         "display": 10,
@@ -59,32 +56,34 @@ def Search_Restaurant(input, flag):
         extracted_data.append(extracted_item)
     if flag == "1":
         return RestaurantData, extracted_data
+    if flag == "2":
+        Furl = get_restaurant_url_selenium(input)
+        return asyncio.run(main(Furl, input)), extracted_data
 
-def Restaurant_Blog(restaurant_name):
-    Blog_params = {
-        "query": restaurant_name,
-        "display": 5,
-        "start": 1,
-        "sort": "sim"
-    }
-    BLOG_response = requests.get(urlblog, headers=headers, params=Blog_params)
-    data = BLOG_response.json()
-    restaurant_blog = ''
-    for item in data['items']:
-        restaurant_blog += item['title'] + '/' + item['link'] + '\n'
-    return restaurant_blog
+async def Restaurant_Blog(restaurant_name):
+    async with aiohttp.ClientSession() as session:
+        Blog_params = {
+            "query": restaurant_name,
+            "display": 5,
+            "start": 1,
+            "sort": "sim"
+        }
+        async with session.get(urlblog, headers=headers, params=Blog_params) as response:
+            data = await response.json()
+            restaurant_blog = '음식점 : ' + restaurant_name + '의 블로그 리뷰\n'
+            for item in data['items']:
+                restaurant_blog += item['title'] + '/' + item['link'] + '\n'
+            return restaurant_blog
 
 def get_restaurant_url_selenium(keyword):
-    # 네이버 플레이스 검색 URL
-    data = pd.DataFrame(columns=['Restaurant_ID'])
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     search_url = f"https://map.naver.com/v5/search/{keyword}"
     # URL 열기
     driver.get(search_url)
 
     # 페이지 로드를 기다림
-    wait = WebDriverWait(driver, 5)
-    time.sleep(2)
+    wait = WebDriverWait(driver, 10)
+    time.sleep(3)
     if parse.unquote(driver.current_url.split('?')[0].split('/')[-1]) == keyword:
         iframe = wait.until(EC.presence_of_element_located((By.ID, 'searchIframe')))
         driver.switch_to.frame(iframe)
@@ -95,40 +94,38 @@ def get_restaurant_url_selenium(keyword):
         first_restaurant.click()
     Furl = driver.current_url.split('?')[0].split('/')[-1]
     driver.quit()
-    data = get_restaurant_reviwes(Furl, keyword) + '\n'
-    data += Restaurant_Blog(keyword)
-    return data
+    return Furl
 
-def get_restaurant_reviwes(Furl, keyword):
+async def get_restaurant_reviwes(Furl, keyword):
     Reviewdata = ''
-    getReviweDriver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     search_url = 'https://m.place.naver.com/restaurant/'+Furl+'/review/visitor?entry=ple'
     try:
-        getReviweDriver.get(search_url)
-        getReviweDriver.implicitly_wait(10)
-        # Pagedown
-        getReviweDriver.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_DOWN)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(search_url) as response:
+                html = await response.text()
+                bs = BeautifulSoup(html, 'lxml')
+                bill_counter_element = bs.select_one('div.place_section.k5tcc')
+                BillCounter = bill_counter_element.select_one('span.place_section_count').text if bill_counter_element else ''
+                review = bs.select('li.YeINN')
+                Reviewdata += "\n음식점 : " + keyword + "의 리뷰, 리뷰개수 : " + BillCounter +'\n'
+                for r in review:
+                    nickname = r.select_one('div.VYGLG')
+                    content = r.select_one('div.ZZ4OK.IwhtZ')
+                    date = r.select('div._7kR3e>span.tzZTd>time')[0]
+                    revisit = r.select('div._7kR3e>span.tzZTd')[1]
 
-        time.sleep(2)
-        html = getReviweDriver.page_source
-        bs = BeautifulSoup(html, 'lxml')
-        BillCounter = getReviweDriver.find_element(By.CSS_SELECTOR, '#app-root > div > div > div > div:nth-child(6) > div:nth-child(2) > div.place_section.k5tcc > h2 > span.place_section_count').text
-        review = bs.select('li.YeINN')
-        Reviewdata += "\n음식점 : " + keyword + "의 리뷰, 리뷰개수 : " + BillCounter +'\n'
-        for r in review:
-            nickname = r.select_one('div.VYGLG')
-            content = r.select_one('div.ZZ4OK.IwhtZ')
-            date = r.select('div._7kR3e>span.tzZTd>time')[0]
-            revisit = r.select('div._7kR3e>span.tzZTd')[1]
-
-            # exception handling
-            nickname = nickname.text if nickname else ''
-            content = content.text if content else ''
-            date = date.text if date else ''
-            revisit = revisit.text if revisit else ''
-            Reviewdata += nickname + '/' + content + '/' + date + '/' + revisit + '\n'
-        Reviewdata += '음식점 정보 링크 : '+ search_url + '\n'
+                    # exception handling
+                    nickname = nickname.text if nickname else ''
+                    content = content.text if content else ''
+                    date = date.text if date else ''
+                    revisit = revisit.text if revisit else ''
+                    Reviewdata += nickname + '/' + content + '/' + date + '/' + revisit + '\n'
+                Reviewdata += '음식점 정보 링크 : '+ search_url + '\n'
     except Exception as e:
         print(e)
-    getReviweDriver.quit()
     return Reviewdata
+
+async def main(Furl, keyword):
+    reviwesdata = await get_restaurant_reviwes(Furl, keyword)
+    blogdata = await Restaurant_Blog(keyword)
+    return reviwesdata + '\n' + blogdata
