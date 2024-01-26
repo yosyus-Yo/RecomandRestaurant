@@ -88,7 +88,7 @@ def thread_message():
     return thread_messages
     
 #msg_f7MmkNqk7FsgSeSaDMidMZDO
-def startMessage(inputC):
+def startMessage(inputC, LastMarker = None):
     run_cancel(thread_id)
     InputChat = inputC
     if InputChat:
@@ -103,6 +103,7 @@ def startMessage(inputC):
         assistant_id=assistants_id,
         )
         data = []
+        flag = None
         run = wait_on_run(run)
         print("런 상태 : ", run.status)
         if run.status == "requires_action":
@@ -110,11 +111,10 @@ def startMessage(inputC):
             tool_call = run.required_action.submit_tool_outputs.tool_calls[0]
             arguments = json.loads(tool_call.function.arguments)
             print(arguments)
-            
+            if LastMarker:
+                print(LastMarker['x'], LastMarker['y'])
             try :
-                task, data = urlscrap.Search_Restaurant(**arguments)
-                print(data)
-                print(task)
+                task, data, flag = urlscrap.Search_Restaurant(**arguments, checkmarker=LastMarker)
             except TypeError: 
                 print("해당사항 없음")
                 task = "해당사항 없음"
@@ -135,7 +135,7 @@ def startMessage(inputC):
         )
         print("다 끝나감")
         print("런 상태 : " , run.status)
-        return messages.data[0].content[0].text.value, data
+        return messages.data[0].content[0].text.value, data, flag
 
         
     

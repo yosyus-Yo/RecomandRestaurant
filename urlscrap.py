@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from urllib import parse
 from bs4 import BeautifulSoup
+import tes
 import pandas as pd
 import time
 import os
@@ -38,7 +39,7 @@ options.add_argument('window-size=1920x1080')
 options.add_argument("disable-gpu")
 options.add_argument("--log-level=3")
 
-def Search_Restaurant(input, flag):
+def Search_Restaurant(input, flag, checkmarker = []):
     Search_params = {
         "query": input,
         "display": 10,
@@ -54,11 +55,19 @@ def Search_Restaurant(input, flag):
         RestaurantData += item['title'] + '/' + item['address'] + '\n'
         extracted_item = {field: item[field] for field in fields}
         extracted_data.append(extracted_item)
+    print(extracted_data)
     if flag == "1":
-        return RestaurantData, extracted_data
+        return RestaurantData, extracted_data, flag
     if flag == "2":
         Furl = get_restaurant_url_selenium(input)
-        return asyncio.run(main(Furl, input)), extracted_data
+        return asyncio.run(main(Furl, input)), extracted_data, flag
+    if flag == "3":
+        mapx = float(extracted_data[0]['mapx']) / 10000000.0
+        mapy = float(extracted_data[0]['mapy']) / 10000000.0
+        start = str(mapx) + ',' + str(mapy)
+        end = str(checkmarker['x']) + ',' + str(checkmarker['y'])
+        summary, path_data = tes.get_directions(start, end)
+        return summary, path_data, flag
 
 async def Restaurant_Blog(restaurant_name):
     async with aiohttp.ClientSession() as session:

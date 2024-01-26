@@ -176,18 +176,35 @@
             var userInput = document.getElementById('chat-input').value;
             addUserMessage(userInput);
             const intervalId = showLoadingMessage();
+            if (allMarkers.length == 1) {
+                checkmarker = allMarkers[0]['position'];
+            }
+            else {
+                checkmarker = [];
+            }
             $.ajax({
                 url: '/sendMessage',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ message: userInput }),
+                data: JSON.stringify({ message: userInput, checkmarker: checkmarker}),
                 success: function (response) {
                     removeLoadingMessage(intervalId);
                     var formattedMessage = formatMessageWithLineBreaks(response.response);
                     addSystemMessage(formattedMessage);
                     document.getElementById('chat-input').value = '';
                     if (!response.markers) {
-                        return;
+                        if(response.checkmarker) {
+                            var path = response.checkmarker.map(function(coord) {
+                            return new naver.maps.LatLng(coord[1], coord[0]);
+                        });
+
+                        var polyline = new naver.maps.Polyline({
+                            map: map,
+                            path: path,
+                            strokeColor: '#5347AA',
+                            strokeWeight: 3
+                        });
+                        }
                     }
                     else {
                         removeMarkers();

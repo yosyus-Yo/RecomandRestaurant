@@ -1,5 +1,4 @@
 from flask import Flask, render_template, jsonify, request
-import urlscrap
 import Place
 app = Flask(__name__)
 
@@ -10,14 +9,17 @@ def index():
 @app.route('/sendMessage', methods=['POST'])
 def send_message():
     message = request.json['message']
-    response_message, restaurant_data = Place.startMessage(message)
+    checkmarker = request.json['checkmarker']
+    response_message, restaurant_data, flag = Place.startMessage(message, checkmarker)
+    if(flag == "3"):
+        return jsonify({"response": response_message , "checkmarker": restaurant_data})
     if restaurant_data != []:
         markers = [
         {
             "title": data['title'],
             "address": data['address'],
-            "lng": convert_to_lat(data['mapx']),  # mapx 값을 위도로 변환
-            "lat": convert_to_lng(data['mapy'])   # mapy 값을 경도로 변환
+            "lng": convert_to_lat(data['mapx']),  # mapx 값을 경도로 변환
+            "lat": convert_to_lng(data['mapy'])   # mapy 값을 위도로 변환
         }
         for data in restaurant_data
         ]
