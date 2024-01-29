@@ -153,7 +153,7 @@
                 loadingElement.remove(); // 메시지 엘리먼트를 삭제합니다.
             }
         }
-            // 기존의 모든 마커를 지도에서 제거하는 함수입니다.
+        // 기존의 모든 마커를 지도에서 제거하는 함수입니다.
         function removeMarkers() {
             allMarkers.forEach(function (marker) {
                 marker.setMap(null); // 마커를 지도에서 제거합니다.
@@ -186,24 +186,24 @@
                 url: '/sendMessage',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ message: userInput, checkmarker: checkmarker}),
+                data: JSON.stringify({ message: userInput, checkmarker: checkmarker }),
                 success: function (response) {
                     removeLoadingMessage(intervalId);
                     var formattedMessage = formatMessageWithLineBreaks(response.response);
                     addSystemMessage(formattedMessage);
                     document.getElementById('chat-input').value = '';
                     if (!response.markers) {
-                        if(response.checkmarker) {
-                            var path = response.checkmarker.map(function(coord) {
-                            return new naver.maps.LatLng(coord[1], coord[0]);
-                        });
+                        if (response.checkmarker) {
+                            var path = response.checkmarker.map(function (coord) {
+                                return new naver.maps.LatLng(coord[1], coord[0]);
+                            });
 
-                        var polyline = new naver.maps.Polyline({
-                            map: map,
-                            path: path,
-                            strokeColor: '#5347AA',
-                            strokeWeight: 3
-                        });
+                            var polyline = new naver.maps.Polyline({
+                                map: map,
+                                path: path,
+                                strokeColor: '#5347AA',
+                                strokeWeight: 3
+                            });
                         }
                     }
                     else {
@@ -255,6 +255,89 @@
         function addSystemMessage(message) {
             var systemMessage = '<div class="message system-message">' + message + '</div>';
             document.getElementById('chat-box').innerHTML += systemMessage;
+        }
+        var currentMarker = null
+        naver.maps.Event.addListener(map, 'click', function (e) {
+            if (currentMarker) {
+                currentMarker.setMap(null);
+            }
+            currentMarker = new naver.maps.Marker({
+                position: e.coord,
+                map: map
+            });
+            $.ajax({
+                url: '/currentMarking',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ message: e.coord }),
+                success: function (response) {
+                    var contentString = [
+                        '<div style="padding:10px;min-width:200px;line-height:150%;">',
+                        '<h4>여기는 어떤가요?</h4>',
+                        '<p>주소 정보: ' + response.response + '</p>',
+                        '<button onclick="setStartPoint(' + e.coord.y  + ',' + e.coord.x + ')">출발</button>',
+                        '<button onclick="setEndPoint(' + e.coord.y + ',' + e.coord.x + ')">도착</button>',
+                        '</div>'
+                    ].join('');
+                    var infowindow = new naver.maps.InfoWindow({
+                        content: contentString
+                    });
+
+                    infowindow.open(map, currentMarker);
+                    naver.maps.Event.addListener(currentMarker, "click", function (e) {
+                        if (infowindow.getMap()) {
+                            infowindow.close();
+                        } else {
+                            infowindow.open(map, currentMarker);
+                        }
+                    });
+                }
+            });
+
+        });
+        var start = null;
+        var end = null;
+        var currentPolyline = null;
+        function setStartPoint(lat, lng) {
+            start = {Lat : lat, Lng : lng};
+            findPath();
+        }
+        function setEndPoint(lat, lng) {
+            end = {Lat : lat, Lng : lng};
+            findPath();
+        }
+        function findPath() {
+            if (start && end) {
+                var bounds = new naver.maps.LatLngBounds(
+                    new naver.maps.LatLng(start['Lat'], start['Lng']),
+                    new naver.maps.LatLng(end['Lat'], end['Lng'])
+                );
+                map.fitBounds(bounds);
+                $.ajax({
+                    url: '/findPath',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ start: start, end: end }),
+                    success: function (response) {
+                        addSystemMessage(formatMessageWithLineBreaks(response.summary));
+                        if (currentPolyline) {
+                            currentPolyline.setMap(null);
+                        }
+                        var path = response.response.map(function (coord) {
+                            return new naver.maps.LatLng(coord[1], coord[0]);
+                        });
+                        currentPolyline = new naver.maps.Polyline({
+                            map: map,
+                            path: path,
+                            strokeColor: '#5347AA',
+                            strokeWeight: 3
+                        });
+                    }
+                });
+            }
+            else {
+                console.log("출발지와 도착지를 설정해주세요.")
+            }
         }
     </script>
 </body>
