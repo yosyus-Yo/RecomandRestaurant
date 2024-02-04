@@ -55,8 +55,8 @@ def Search_Restaurant(input, flag, checkmarker = []):
         RestaurantData += item['title'] + '/' + item['address'] + '\n'
         extracted_item = {field: item[field] for field in fields}
         extracted_data.append(extracted_item)
-    print(extracted_data)
     if flag == "1":
+        # return RestaurantData, extracted_data, flag
         return RestaurantData, extracted_data, flag
     if flag == "2":
         Furl = get_restaurant_url_selenium(input)
@@ -66,6 +66,7 @@ def Search_Restaurant(input, flag, checkmarker = []):
         mapy = float(extracted_data[0]['mapy']) / 10000000.0
         start = str(mapx) + ',' + str(mapy)
         end = str(checkmarker['x']) + ',' + str(checkmarker['y'])
+        print(start, end)
         summary, path_data = tes.get_directions(start, end)
         return summary, path_data, flag
 
@@ -117,7 +118,7 @@ async def get_restaurant_reviwes(Furl, keyword):
                 BillCounter = bill_counter_element.select_one('span.place_section_count').text if bill_counter_element else ''
                 review = bs.select('li.YeINN')
                 Reviewdata += "\n음식점 : " + keyword + "의 리뷰, 리뷰개수 : " + BillCounter +'\n'
-                for r in review:
+                for r in review[:5]:
                     nickname = r.select_one('div.VYGLG')
                     content = r.select_one('div.ZZ4OK.IwhtZ')
                     date = r.select('div._7kR3e>span.tzZTd>time')[0]
