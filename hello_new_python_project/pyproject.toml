@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "hello-new-python-project"
+version = "0.1.0"
+description = ""
+authors = ["YosYus <sioxgap409@naver.com>"]
+readme = "README.md"
+packages = [{include = "hello_new_python_project"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -107,5 +107,3 @@ def Output(input, checkmarker = []):
     if flag == "3":
         print(pathData)
     return output['output'], pathData, flag
-Output("더티트렁크")
-Output("내 집은 산내마을 11단지인데 길찾기 해줘", checkmarker={"x": 126.7029993, "y": 37.7283823})

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>정보 제출</title>
+</head>
+<body>
+    <form action="/submit_info/" method="post">
+        {% csrf_token %}
+        <label for="name">이름:</label>
+        <input type="text" id="name" name="name">
+        <input type="submit" value="제출">
+    </form>
+</body>
+</html>
