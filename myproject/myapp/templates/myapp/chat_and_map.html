@@ -183,10 +183,10 @@
                 checkmarker = [];
             }
             $.ajax({
-                url: '/sendMessage',
+                url: '/main_handler/',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ message: userInput, checkmarker: checkmarker }),
+                data: JSON.stringify({action: 'send_message', message: userInput, checkmarker: checkmarker }),
                 success: function (response) {
                     removeLoadingMessage(intervalId);
                     var formattedMessage = formatMessageWithLineBreaks(response.response);
@@ -266,10 +266,10 @@
                 map: map
             });
             $.ajax({
-                url: '/currentMarking',
+                url: '/main_handler/',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ message: e.coord }),
+                data: JSON.stringify({action: 'currentMarking',  message: e.coord }),
                 success: function (response) {
                     var contentString = [
                         '<div style="padding:10px;min-width:200px;line-height:150%;">',
@@ -293,7 +293,6 @@
                     });
                 }
             });
-
         });
         var start = null;
         var end = null;
@@ -314,10 +313,10 @@
                 );
                 map.fitBounds(bounds);
                 $.ajax({
-                    url: '/findPath',
+                    url: '/main_handler/',
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify({ start: start, end: end }),
+                    data: JSON.stringify({action: 'findPath', start: start, end: end }),
                     success: function (response) {
                         addSystemMessage(formatMessageWithLineBreaks(response.summary));
                         if (currentPolyline) {

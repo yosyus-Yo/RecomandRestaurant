@@ -1,11 +1,11 @@
 from langchain_openai import ChatOpenAI
-from langchain.tools.render import format_tool_to_openai_function
 import openai
+from langchain.tools.render import format_tool_to_openai_function
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.agents.format_scratchpad import format_to_openai_functions
 from langchain.tools import tool
 from pydantic import BaseModel, Field
-import urlscrap
+from .urlscrap import Search_Restaurant
 from langchain_core import utils
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.agent import AgentFinish
@@ -60,7 +60,7 @@ def Search(Restaurnat_Search : str, Search_flag : str) -> str:
     if checkmarker_info:
         checkmarker = checkmarker_info.get("checkmarker")
     global pathData, flag
-    restaurantData, pathData, flag = urlscrap.Search_Restaurant(Restaurnat_Search, Search_flag, checkmarker)
+    restaurantData, pathData, flag = Search_Restaurant(Restaurnat_Search, Search_flag, checkmarker)
     return restaurantData
 
 def run_agent(user_input):
@@ -105,9 +105,6 @@ def Output(input, checkmarker = []):
     GlobalState.set_state(state_key, {"checkmarker": checkmarker})
     output = agent_executor.invoke({"input" : input})
     GlobalState.clear_state(state_key)
-    print(output)
-    if flag == "3":
-        print(pathData)
+    print(output['output'])
+    print(pathData)
     return output['output'], pathData, flag
-
-Output("hi")

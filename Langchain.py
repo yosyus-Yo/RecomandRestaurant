@@ -51,7 +51,8 @@ class RestaurantSearch(BaseModel):
                                 If you want users to enter an address and get directions to a specific restaurant, then set Flag = 3.""")
 
 Restaurant_function = utils.function_calling.convert_to_openai_function(RestaurantSearch)
-
+flag = None
+pathData = None
 @tool("search-tool",args_schema=RestaurantSearch)
 def Search(Restaurnat_Search : str, Search_flag : str) -> str:
     """Search for restaurants in the area."""
@@ -107,3 +108,5 @@ def Output(input, checkmarker = []):
     if flag == "3":
         print(pathData)
     return output['output'], pathData, flag
+
+Output("hi")

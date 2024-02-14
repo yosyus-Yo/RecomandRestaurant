@@ -115,7 +115,6 @@ SQLAlchemy==2.0.25
 squarify==0.4.3
 starlette==0.35.1
 streamlit==1.29.0
-TA-Lib @ file:///C:/STOM_M~2/utility/TA_Lib-0.4.25-cp311-cp311-win_amd64.whl#sha256=790634afc8902023132d3b39722c6006e3adefeccaa8096bab57544cbd061ad8
 tenacity==8.2.3
 tiktoken==0.5.2
 toml==0.10.2
