@@ -107,6 +107,10 @@ def Output(input, checkmarker = []):
     print(output)
     if flag == "3":
         print(pathData)
+<<<<<<< HEAD
     return output['output'], pathData, flag
 
 Output("hi")
+=======
+    return output['output'], pathData, flag
+>>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e

@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import render
+<<<<<<< HEAD
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
@@ -33,6 +34,14 @@ def main_handler(request):
     # 비POST/GET 요청에 대한 처리
     return JsonResponse({'message': 'This endpoint only supports POST requests.'}, status=405)
     
+=======
+from django.http import JsonResponse
+from .models import UserInfo
+from . Langchain import Output
+import reverse_geocode
+import tes
+
+>>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
 def submit_info(request):
     if request.method == "POST":
         name = request.POST.get('name')
@@ -42,6 +51,7 @@ def submit_info(request):
     else:
         return render(request, "myapp/submit_info_form.html")
     
+<<<<<<< HEAD
 def send_message(request):
     data = json.loads(request.body)
     message = data['message']
@@ -49,6 +59,18 @@ def send_message(request):
     if(flag == 3):
         return JsonResponse({"response": response_message})
     if restaurant_data != None:
+=======
+def chat_and_map(request):
+    return render(request, 'myapp/chat_and_map.html')
+
+def send_message(request):
+    message = request.json['message']
+    checkmarker = request.json['checkmarker']
+    response_message, restaurant_data, flag = Output(message, checkmarker)
+    if(flag == 3):
+        return JsonResponse({"response": response_message , "checkmarker": restaurant_data})
+    if restaurant_data != []:
+>>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
         markers = [
         {
             "title": data['title'],
@@ -62,6 +84,7 @@ def send_message(request):
     return JsonResponse({"response": response_message})
 
 def currentMarking(request):
+<<<<<<< HEAD
     data = json.loads(request.body)
     currentLocation = data['message']
     lat = currentLocation['y']
@@ -75,6 +98,18 @@ def findPath(request):
     end = str(data['end']['Lng']) + ',' + str(data['end']['Lat'])
     print(start, end)
     summary, response = get_directions(start, end)
+=======
+    currentLocation = request.json['message']
+    lat = currentLocation['y']
+    lng = currentLocation['x']
+    response = reverse_geocode.reverse_geocode(lat, lng)
+    return JsonResponse({'response': response})
+
+def findPath(request):
+    start = request.json['start']
+    end = request.json['end']
+    summary, response = tes.get_directions(start, end)
+>>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
     return JsonResponse({'response': response, 'summary' : summary})
 
 def convert_to_lat(mapx):
@@ -83,4 +118,8 @@ def convert_to_lat(mapx):
 
 def convert_to_lng(mapy):
     # mapy 값을 경도로 변환하는 함수
+<<<<<<< HEAD
     return float(mapy) / 10000000.0  # 예시 변환 로직
+=======
+    return float(mapy) / 10000000.0  # 예시 변환 로직
+>>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e

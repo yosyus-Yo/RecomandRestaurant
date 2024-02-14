@@ -7,7 +7,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from urllib import parse
 from bs4 import BeautifulSoup
+<<<<<<< HEAD
 from .tes import get_directions
+=======
+import tes
+>>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
 import pandas as pd
 import time
 import os
@@ -67,7 +71,11 @@ def Search_Restaurant(input, flag = "0", checkmarker = []):
         start = str(mapx) + ',' + str(mapy)
         end = str(checkmarker['x']) + ',' + str(checkmarker['y'])
         print(start, end)
+<<<<<<< HEAD
         summary, path_data = get_directions(start, end)
+=======
+        summary, path_data = tes.get_directions(start, end)
+>>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
         return summary, path_data, flag
 
 async def Restaurant_Blog(restaurant_name):
