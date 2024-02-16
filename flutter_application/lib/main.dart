@@ -42,7 +42,48 @@ class _MapScreenState extends State<MapScreen> {
   bool _showChat = false;
   final TextEditingController _chatController = TextEditingController();
   final List<String> _messages = [];
+  LocationData? _currentLocation;
+  Location location = Location();
 
+  @override
+  void initState() {
+    super.initState();
+    _requestLocationPermission();
+    _getCurrentLocation();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+
+    _serviceEnabled = await location.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await location.requestService();
+      if (!_serviceEnabled) {
+        return;
+      }
+    }
+
+    _permissionGranted = await location.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await location.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      final _locationData = await location.getLocation();
+      setState(() {
+        _currentLocation = _locationData;
+      });
+    } catch (e) {
+      print("현재 위치를 가져오는 데 실패했습니다: $e");
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -129,49 +170,74 @@ class _MapScreenState extends State<MapScreen> {
           ),
 
           // 채팅 창
-          if (_showChat)
-            Positioned(
-              bottom: 80.0,
-              right: 20.0,
-              child: Container(
-                width: 300,
-                height: 400,
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      blurRadius: 8,
-                      color: Colors.black26,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) => ListTile(
-                          title: Text(_messages[index]),
-                        ),
+          if (_showChat) {
+    return Positioned(
+      bottom: 80.0,
+      right: 20.0,
+      child: Container(
+        width: 300,
+        height: 400,
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 8,
+              color: Colors.black26,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                reverse: true, // 새 메시지를 아래에서 위로 추가
+                itemCount: _messages.length,
+                itemBuilder: (context, index) {
+                  bool isMe = true; // 현재 사용자의 메시지라고 가정
+                  return Container(
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: isMe ? Colors.yellow[200] : Colors.grey[300], // 사용자는 노란색, GPT는 회색
+                      ),
+                      child: Text(
+                        _messages[index],
+                        style: TextStyle(fontSize: 16),
                       ),
                     ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _chatController,
-                            decoration: InputDecoration(
-                              hintText: '메시지 입력...',
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.send),
-                          onPressed: () async {// 비동기 함수로 변경
+                  );
+                },
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.only(left: 15, bottom: 10, right: 15),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(8),
+                  bottomRight: Radius.circular(8),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _chatController,
+                      decoration: InputDecoration(
+                        hintText: "메시지 입력...",
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.send, color: Theme.of(context).primaryColor),
+                    onPressed: () async {// 비동기 함수로 변경
                             String userMessage = "";
                             setState(() {
                               if (_chatController.text.isNotEmpty) {
@@ -193,10 +259,12 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ],
                     ),
+            ),
                   ],
                 ),
               ),
             ),
+          },
         ],
       ),
     );

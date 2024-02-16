@@ -16,21 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-<<<<<<< HEAD
 from myapp.views import submit_info, main_handler
-=======
-from myapp.views import submit_info, chat_and_map, send_message, currentMarking, findPath
->>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('submit_info/', submit_info, name='submit_info'),
-<<<<<<< HEAD
     path('main_handler/', main_handler, name='main_handler'),
-=======
-    path('chat-and-map/', chat_and_map, name='chat_and_map'),
-    path('send-message/', send_message, name='send_message'),
-    path('currentMarking/', currentMarking, name='currentMarking'),
-    path('findPath/', findPath, name='findPath'),
->>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
 ]

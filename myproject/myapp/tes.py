@@ -13,10 +13,7 @@ def get_directions(start, end):
         "start": start,
         "goal": end
     }
-<<<<<<< HEAD
     print(start, end)
-=======
->>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
     response = requests.get(url, headers=headers, params=params)
     directions_data = response.json()
     print(directions_data)

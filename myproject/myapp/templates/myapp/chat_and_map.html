@@ -183,17 +183,10 @@
                 checkmarker = [];
             }
             $.ajax({
-<<<<<<< HEAD
                 url: '/main_handler/',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({action: 'send_message', message: userInput, checkmarker: checkmarker }),
-=======
-                url: '/sendMessage',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ message: userInput, checkmarker: checkmarker }),
->>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
                 success: function (response) {
                     removeLoadingMessage(intervalId);
                     var formattedMessage = formatMessageWithLineBreaks(response.response);
@@ -273,17 +266,10 @@
                 map: map
             });
             $.ajax({
-<<<<<<< HEAD
                 url: '/main_handler/',
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({action: 'currentMarking',  message: e.coord }),
-=======
-                url: '/currentMarking',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ message: e.coord }),
->>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
                 success: function (response) {
                     var contentString = [
                         '<div style="padding:10px;min-width:200px;line-height:150%;">',
@@ -307,10 +293,6 @@
                     });
                 }
             });
-<<<<<<< HEAD
-=======
-
->>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
         });
         var start = null;
         var end = null;
@@ -331,17 +313,10 @@
                 );
                 map.fitBounds(bounds);
                 $.ajax({
-<<<<<<< HEAD
                     url: '/main_handler/',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({action: 'findPath', start: start, end: end }),
-=======
-                    url: '/findPath',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ start: start, end: end }),
->>>>>>> 3d4777250e1715cd95174cc37b63b48f410ae07e
                     success: function (response) {
                         addSystemMessage(formatMessageWithLineBreaks(response.summary));
                         if (currentPolyline) {

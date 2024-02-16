@@ -7,7 +7,7 @@ Future<String> ChatWithGpt(String input) async {
   final headers = {'Content-Type': 'application/json'};
   final body = json.encode({
     'action': 'send_message',
-    'input' : input,
+    'message' : input,
   });
   log('body: $body');
   try {
