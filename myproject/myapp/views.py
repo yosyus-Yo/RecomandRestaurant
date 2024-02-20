@@ -71,8 +71,8 @@ def currentMarking(request):
 
 def findPath(request):
     data = json.loads(request.body)
-    start = str(data['start']['Lng']) + ',' + str(data['start']['Lat'])
-    end = str(data['end']['Lng']) + ',' + str(data['end']['Lat'])
+    start = data['start']
+    end = data['end']
     print(start, end)
     summary, response = get_directions(start, end)
     return JsonResponse({'response': response, 'summary' : summary})
