@@ -3,7 +3,9 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:geolocator/geolocator.dart';
 
 import 'ChatWithGpt.dart';
 import 'setOnTapListener .dart';
@@ -57,9 +59,18 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    requestMicrophonePermission();
     _speech = stt.SpeechToText(); // SpeechToText 인스턴스 초기화
   }
 
+  void requestMicrophonePermission() async {
+  var status = await Permission.microphone.request();
+  if (status.isGranted) {
+    print('마이크 권한 허용됨');
+  } else if (status.isDenied) {
+    print('마이크 권한 거부됨');
+  }
+}
     void _startListening() async {
     bool available = await _speech.initialize(
       onStatus: (val) => print('onStatus: $val'),
@@ -124,7 +135,7 @@ class _MapScreenState extends State<MapScreen> {
               marker.openInfoWindow(onMarkerInfoWindow);
               if(_showRouteMode == true)
               {
-                _handleMapTap(latLng);
+                _handleMapTap(latLng, info);
                 if(_endPoint != "")
                 {
                   final response = await FindPath(_startPoint, _endPoint);
@@ -168,6 +179,7 @@ class _MapScreenState extends State<MapScreen> {
   void _toggleRouteMode() {
     setState(() {
       _showRouteMode = !_showRouteMode;
+      
     });
   }
 
@@ -225,17 +237,20 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
-  void _handleMapTap(NLatLng latLng) {
-    if (_showRouteMode == false) { // If search bar is not showing, we're in route selection mode
+  void _handleMapTap(NLatLng latLng, String info) {
+    if (_showRouteMode == true) { // If search bar is not showing, we're in route selection mode
       setState(() {
         if (_startPoint == "") {
           _startPoint = "${latLng.longitude}, ${latLng.latitude}";
+          _startController.text = info;
           log("Start point: $_startPoint", name: "NaverMap");
         } else if (_endPoint == "") {
           _endPoint = "${latLng.longitude}, ${latLng.latitude}";
+          _endController.text = info;
         } else {
           // Reset points if both are already set and map is tapped again
           _startPoint = "${latLng.longitude}, ${latLng.latitude}";
+          _startController.text = info;
           _endPoint = "";
         }
       });
@@ -293,7 +308,7 @@ class _MapScreenState extends State<MapScreen> {
   final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
   return Positioned(
-    bottom: keyboardHeight != 0 ? keyboardHeight + 20.0 : 70.0,
+    bottom: keyboardHeight != 0 ? keyboardHeight + 20.0 : 80.0,
     right: 20.0,
     left: 20.0,
     child: Container(
