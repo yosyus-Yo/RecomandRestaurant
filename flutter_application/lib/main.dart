@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 import 'ChatWithGpt.dart';
 import 'setOnTapListener .dart';
@@ -55,14 +55,29 @@ class _MapScreenState extends State<MapScreen> {
   late String _endPoint = "";
   late stt.SpeechToText _speech; // 음성 인식을 위한 객체
   bool _isListening = false; // 현재 음성 인식이 활성화되어 있는지 여부
+  late FlutterTts flutterTts;
 
   @override
   void initState() {
     super.initState();
     requestMicrophonePermission();
-    _speech = stt.SpeechToText(); // SpeechToText 인스턴스 초기화
+    flutterTts = FlutterTts();
+    _speech = stt.SpeechToText(); 
+    // SpeechToText 인스턴스 초기화
   }
 
+  void _initializeTts() {
+    flutterTts.setLanguage("ko-KR"); // 언어 설정
+    flutterTts.setSpeechRate(0.5); // 말하는 속도 설정
+    flutterTts.setVolume(1.0); // 볼륨 설정
+    flutterTts.setPitch(1.0); // 피치(음높이) 설정
+  }
+
+  Future _speak(String text) async {
+    if (text.isNotEmpty) {
+      await flutterTts.speak(text);
+    }
+  }
   void requestMicrophonePermission() async {
   var status = await Permission.microphone.request();
   if (status.isGranted) {
@@ -91,6 +106,12 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  void _handleGptResponse(String gptResponse) {
+      setState(() {
+        _messages.insert(0, "GPT: $gptResponse");
+        _speak(gptResponse); // TTS를 사용하여 GPT의 응답을 음성으로 재생
+      });
+    }
   void _stopListening() {
     _speech.stop(); // 음성 인식 중지
     setState(() => _isListening = false);
@@ -166,8 +187,8 @@ class _MapScreenState extends State<MapScreen> {
           ),
           _buildSearchBar(),
           if (_showRouteMode) _buildRouteSelection(),
-          _buildChatIcon(),
           _buildRouteButton(),
+          if (_showChat) _buildMicIcon(), // 채팅창이 표시될 때 마이크 아이콘도 함께 표시
           if (_showChat) _buildChatWindow(),
           _buildChatIcon(),
         ],
@@ -289,20 +310,39 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildChatIcon() {
-    return Positioned(
-      bottom: 20.0,
-      right: 20.0,
-      child: FloatingActionButton(
-        onPressed: () {
-          setState(() {
-            _showChat = !_showChat;
-          });
-        },
-        child: Icon(Icons.chat),
-      ),
-    );
-  }
-
+  return Positioned(
+    bottom: 20.0,
+    right: 20.0,
+    child: FloatingActionButton(
+      onPressed: () {
+        setState(() {
+          _showChat = !_showChat;
+          if (_showChat) {
+            // 채팅창을 열 때 마이크를 비활성화 상태로 설정
+            _isListening = false;
+          } else if (!_showChat && _isListening) {
+            // 채팅창을 닫을 때 음성 인식이 활성화되어 있으면 비활성화
+            _stopListening();
+          }
+        });
+      },
+      backgroundColor: _isListening ? Colors.green : Colors.blue, // 마이크 상태에 따라 버튼 색상 변경
+      child: Icon(_isListening ? Icons.mic : Icons.chat), // 마이크 상태에 따라 아이콘 변경
+    ),
+  );
+}
+Widget _buildMicIcon() {
+  // 마이크 아이콘을 비활성화 상태로 표시하는 위젯
+  return Positioned(
+    bottom: 90.0, // 채팅 아이콘 위에 위치
+    right: 20.0,
+    child: FloatingActionButton(
+      onPressed: _isListening ? _stopListening : _startListening,
+      backgroundColor: _isListening ? Colors.green : Colors.grey, // 활성화 상태에 따라 색상 변경
+      child: Icon(_isListening ? Icons.mic : Icons.mic_none), // 활성화 상태에 따라 아이콘 변경
+    ),
+  );
+}
   Widget _buildChatWindow() {
   final screenHeight = MediaQuery.of(context).size.height;
   final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
@@ -389,9 +429,7 @@ Widget _chatContent() {
                     });
                     // 서버로부터 답변 받아오기
                     String gptResponse = await ChatWithGpt(userMessage); // ChatWithGpt 함수 호출
-                    setState(() {
-                      _messages.insert(0, "GPT: $gptResponse");
-                    });
+                    _handleGptResponse(gptResponse);
                   }
                 },
             ),
